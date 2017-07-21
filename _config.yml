@@ -6,7 +6,7 @@
 title: MyNote
 subtitle: 
 description: MyNote
-author: hlhdidi
+author: 大胡龙
 language:
 timezone:
 
@@ -16,6 +16,14 @@ url: http://yoursite.com
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
+
+menu:
+  home: /
+  archives: /archives
+  #about: /about
+  categories: /categories
+  tags: /tags
+  #commonweal: /404.html
 
 # Directory
 source_dir: source
@@ -43,10 +51,20 @@ highlight:
   auto_detect: false
   tab_replace:
 
+  
+sidebar:
+  position: left
+  display: post
+  
 # Category & Tag
 default_category: uncategorized
 category_map:
 tag_map:
+  
+  
+avatar: /images/p1.jpg
+
+highlight_theme: normal
 
 # Date / Time format
 ## Hexo uses Moment.js to parse and display date
