@@ -1,0 +1,87 @@
+---
+title: mysql必知必会
+date: 2017-07-25
+tags: mysql
+---
+
+<!-- MDTOC maxdepth:6 firsth1:1 numbering:0 flatten:0 bullets:1 updateOnSave:1 -->
+
+- [mysql必知必会](#mysql必知必会)
+   - [数据过滤与搜索](#数据过滤与搜索)
+   - [计算和数据处理](#计算和数据处理)
+<!-- /MDTOC -->
+
+# mysql必知必会
+
+## 数据过滤与搜索
+
+  * MYSQL支持NOT对于IN,BETWEEN,EXISTS子句取反,这和多数其他DBMS允许NOT对各种条件取反有较大的差别
+  * %通配符可以匹配0个,1个或者多个字符,但是需要注意,%是没有办法匹配NULL的.因此WHERE product_name like '%'是没办法
+匹配为该字段为NULL的记录
+  * 搜索通配符的位置:不要将搜索通配符放在搜索模式的最开始处,放在最开始处,搜索起来是最慢的.
+  * MYSQL的正则表达式.
+  如下,下面是使用MYSQL的正则表达式的示例:
+  ```sql
+  select * from products where prod_name REGEXP '1000'
+  ```
+  可以看出上面的SQL和LIKE语句很像,下面是它的返回值,可以看出是有些不同的.
+
+| prod_id | vend_id | product_name | prod_price |    prod_desc    |
+| ------- | ------- | ------------ | ---------- | --------------- |
+| JP1000  | 1005    | JetPack 1000 | 35         | JetPack 1000,ir |
+
+  如果只把REGEXP改为LIKE,这样子的返回值会有很大不同.会直接返回空,这是LIKE和REGEXP跟大的区别.LIKE匹配整个列,就算文本
+在列值内出现,它也不会直接返回相应的行(除非使用通配符)而REGEXP会在整个列值内进行匹配,如果被匹配的文本在列值内出现对应的
+行就会返回,这是很大的区别..想要使其匹配整个列值,可以使用如下方式编写SQL:
+```sql
+-- 需要注意,^如果出现在[]用于表示否定,其他情况下则用于表示行的开始
+select * from products where prod_name REGEXP '^1000$'
+```
+  正则表达式的OR操作:为了搜索两个串之一,可以使用|,如下所示:
+```sql
+select * from products where prod_name REGEXP '1000|2000'
+```
+  该SQL匹配的就是字段中有1000,2000的记录
+  匹配几个字符之一:可以使用[]来进行匹配.
+
+```sql
+-- product_name : 1000XXXXX 2000XXXX ...
+select * from products where prod_name REGEXP '[123]000'
+-- product_name not 1000XXXX 2000XXXX
+select * from products where prod_name REGEXP '[^123]000'
+-- product_name 介于1000XXXX 5000XXXX
+select * from products where prod_name REGEXP '[1-5]000'
+```
+  如果想匹配特殊字符,可以使用\\去匹配特殊字符
+```sql
+select * from vendors where vend_name REGEXP '\\.'
+```
+  测试正则表达式:
+  由于REGEXP总是返回0或者1,因此可以通过测试返回的数值判断是否匹配:
+```sql
+select 'hello' REGEXP '[0-9]+'
+```
+
+## 计算和数据处理
+
+* Concat函数用于拼接各个参数的值.它可以将各个列的值拼接在一起并且计算.例如下面的:
+```sql
+  select CONCAT(vend_id,':',vend_name,'(',vend_country,')') from vendors
+```
+
+* Mysql的测试计算:
+  虽然SELECT通常用来从表中检索数据,但是也可以省略FROM语句去进行简单的访问和处理表达式.例如下面的将返回'abc'可以便捷
+  测试.
+```sql
+  select trim('abc ')
+```
+
+* mysql中的日期和时间函数
+首先是MYSQL中的日期的数据格式,不管是插入或者更新表值或者是用WHERE子句进行过滤,日期的格式都必须是yyyy-mm-dd格式.
+首先看看下面的语句是否正确:
+```sql
+select * from orders where order_date = '2015-09-01'
+```
+需要注意的是order_date是datetime的数据类型,上面的SQL目的是过滤指定日期的记录,但是显然,直接这么处理的话过滤的是指定
+日期的00:00:00的记录,这就不对了
+这时候需要使用DATE()函数.它会对date/datetime的数据类型的数据弄出其日期进行判断.
