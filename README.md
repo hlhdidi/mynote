@@ -1,7 +1,7 @@
 <!-- MDTOC maxdepth:6 firsth1:1 numbering:0 flatten:0 bullets:1 updateOnSave:1 -->
 
    - [install](#install)   
-   - [常用插件](#常用插件)       
+   - [Atom常用插件](#Atom常用插件)       
 	  
 <!-- /MDTOC -->
 
@@ -10,7 +10,7 @@
 * 安装node.js环境 
 
 因为要使用npm命令去安装软件,因此需要安装Node.js
-去官网https://nodejs.org/en/下载
+去官网https://nodejs.org/en/ 下载
 
 * 安装hexo
 
@@ -30,6 +30,16 @@
 	cd mynote
 	hexo server
 ```
+
+## Atom常用插件
+
+1. atom-mdtoc：用来生成文章目录
+2. markdown-table-editor：用来写表格
+3. markdown-preview-plus：增强版的预览
+4. markdown-scroll-sync：配合预览使用
+
+安装方法:file-->settings-->install-->Install Packages 进行安装
+
 
  
  
