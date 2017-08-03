@@ -9,6 +9,7 @@ tags: mysql
 - [mysql必知必会](#mysql必知必会)
    - [数据过滤与搜索](#数据过滤与搜索)
    - [计算和数据处理](#计算和数据处理)
+   - [关联查询和联结表](#关联查询和联结表)
 <!-- /MDTOC -->
 
 # mysql必知必会
@@ -103,3 +104,12 @@ select count(DISTINCT(prod_price)),max(prod_id) from products
 ```
 
 * 数据分组
+
+分组需要注意的几点:
+如果在SELECT指定表达式,则必须在GROUP BY指定相同的表达式,GROUP BY字句中的每个列都必须是字段或者检索表达式(但是
+不能是分组函数).
+如果分组具有NULL值,则作为一组返回,如果分组有多个列为NULL值,则他们被视为一组
+除了聚集计算的列以外,SELECT使用的字段都需要在GOUP BY中给出
+WHERE是在分组前过滤,HAVING是在分组后过滤
+
+## 关联查询和联结表
