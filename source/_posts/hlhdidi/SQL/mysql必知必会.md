@@ -85,3 +85,21 @@ select * from orders where order_date = '2015-09-01'
 需要注意的是order_date是datetime的数据类型,上面的SQL目的是过滤指定日期的记录,但是显然,直接这么处理的话过滤的是指定
 日期的00:00:00的记录,这就不对了
 这时候需要使用DATE()函数.它会对date/datetime的数据类型的数据弄出其日期进行判断.
+此外还用一种函数可以直接使用MONTH和YEAR函数去计算一个指定日期的年份和月份.例如:
+```sql
+select YEAR(tstamp) from log_opt_cart;
+```
+
+* 聚集函数
+
+AVG:AVG会忽略NULL值.AVG的计算顺序在WHERE之后,在HAVING之前.
+COUNT:如果使用*则不忽略NULL值.如果不使用*,指定列值,则忽略NULL值
+MAX/MIN:都会忽略NULL值
+SUM:会忽略NULL值
+
+可以在一次查询中使用多个上述函数.(也就是说上述函数是可以互相之间相互组合使用的)
+```sql
+select count(DISTINCT(prod_price)),max(prod_id) from products
+```
+
+* 数据分组
