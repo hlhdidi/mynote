@@ -203,3 +203,28 @@ public class UserInfoService  implements UserDetailsService {
 		<location>/WEB-INF/templates/error/error_403.html</location>
 	</error-page>
 ```
+
+## 在spring中使用JDBC
+
+我们使用JDBCTemplate去执行对于传统JDBC的简化.配置JDBCTemplate,需要设置数据库连接池.
+```java
+  @Bean
+    public DataSource dataSource() {
+        DruidDataSource dataSource = new DruidDataSource();
+        dataSource.setUrl("jdbc:mysql://127.0.0.1:3306/test");
+        dataSource.setUsername("root");
+        dataSource.setPassword("root");
+        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+        return dataSource;
+    }
+    @Bean
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+```
+
+通过在类中注入JdbcOpertations去实现访问数据库.JdbcOpertations是一个接口,它定义了JdbcTemplate的操作,这样子就完成了松耦合.
+```java
+    @Autowired
+    JdbcOperations jdbcOperations;
+```
