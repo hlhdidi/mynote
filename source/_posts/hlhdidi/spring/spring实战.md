@@ -228,3 +228,90 @@ public class UserInfoService  implements UserDetailsService {
     @Autowired
     JdbcOperations jdbcOperations;
 ```
+
+下面是使用JdbcTemplate完成插入和查询的操作:
+```java
+@Override
+    public UserInfo findUserByUsername(String username) {
+        try {
+            UserInfo userInfo = jdbcOperations.queryForObject("select * from userinfo where username = '" + username + "'",
+                    new RowMapper<UserInfo>() {
+                        @Override
+                        public UserInfo mapRow(ResultSet resultSet, int i) throws SQLException {
+                            UserInfo userInfo = new UserInfo();
+                            userInfo.setUsername(resultSet.getString("username"));
+                            userInfo.setPassword(resultSet.getString("password"));
+                            return userInfo;
+                        }
+                    });
+            return userInfo;
+        } catch (Exception e) {
+            return null;
+        }
+
+    }
+
+    @Override
+    public void save(UserInfo userInfo) {
+        Md5PasswordEncoder encoder = new Md5PasswordEncoder();
+        String saltPassword = encoder.encodePassword(userInfo.getPassword(),"hlhdidi");
+        jdbcOperations.update("insert into userinfo (username,password) values(?,?)",
+                userInfo.getUsername(), saltPassword);
+    }
+```
+
+还可以使用Java8的Lambda表达式:
+```java
+UserInfo userInfo = jdbcOperations.queryForObject("select * from userinfo where username = '" + username + "'",
+     (rs,rowNum) -> {
+         return new UserInfo(rs.getString("username"),
+                 rs.getString("password"));
+     });
+```
+
+* 使用命名参数
+
+  有时候可以使用命名参数,对于参数都指定一个名字,这样子在绑定值的时候就不用去修改参数了,非常方便.
+  使用命名参数的步骤如下:
+  声明模板:
+```java
+@Bean
+    public NamedParameterJdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new NamedParameterJdbcTemplate(dataSource);
+    }
+```
+  进行更新和查询
+```java
+@Override
+    public UserInfo findUserByUsername(String username) {
+        try {
+            Map<String,String> usernameMap = new HashMap<>();
+            usernameMap.put("username",username);
+            UserInfo userInfo = jdbcOperations.queryForObject("select * from userinfo where username = :username",
+                    usernameMap, new RowMapper<UserInfo>() {
+                        @Override
+                        public UserInfo mapRow(ResultSet resultSet, int i) throws SQLException {
+                            UserInfo userInfo1 = new UserInfo();
+                            userInfo1.setUsername(resultSet.getString("username"));
+                            userInfo1.setPassword(resultSet.getString("password"));
+                            return userInfo1;
+                        }
+                    });
+            return userInfo;
+        } catch (Exception e) {
+            return null;
+        }
+
+    }
+
+    @Override
+    public void save(UserInfo userInfo) {
+        Md5PasswordEncoder encoder = new Md5PasswordEncoder();
+        String saltPassword = encoder.encodePassword(userInfo.getPassword(),"hlhdidi");
+        Map<String,Object> map = new HashMap<>();
+        map.put("username",userInfo.getUsername());
+        map.put("password",saltPassword);
+        jdbcOperations.update("insert into userinfo (username,password) values(:username,:password)",
+                map);
+    }
+```
