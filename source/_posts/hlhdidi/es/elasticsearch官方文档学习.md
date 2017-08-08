@@ -9,6 +9,7 @@ tags: elasticsearch
 - [基本概念,入门和安装](#基本概念,入门和安装)
    - [基本概念](#基本概念)
    - [安装](#安装)
+   - [基本操作](#基本操作)
 <!-- /MDTOC -->
 
 ## 基本概念,入门和安装
@@ -32,7 +33,7 @@ tags: elasticsearch
   windows安装:
   下载地址:https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.1.msi
   正常安装,选择do not install as service.配置选择默认的即可,不要安装任何plugins.
-  随后进入目录下:.\elasticsearch.exe 
+  随后进入目录下:.\elasticsearch.exe
   可以指定cluster的名称和Node的名称: .\elasticsearch.exe -Ecluster.name=hlhcluster -Enode.name=hlhnode
   报错的处理:如果报错如下:
 ```java
@@ -57,3 +58,22 @@ java.lang.IllegalStateException: Received message from unsupported version: [2.0
 	"tagline": "You Know, for Search"
 }
 ```
+
+### 基本操作
+
+* 检测Cluster的生命周期
+
+  可以直接在服务器启动后,在地址栏访问接口_cat/health?v,通过返回值可以确定当前集群的状态,当前节点数量,当前Shards数量.
+  可以访问_cat/nodes?v接口,观察当前结点的信息,包括ip地址,版本号,结点名称等
+
+* 查询当前所有的index
+  可以访问接口_cat/indices?v,可以看到当前还没有任何Index
+
+* 新增一个Index
+  安装kibana插件.kibana插件是用于协同和es工作的插件,可以通过https://www.elastic.co/guide/en/kibana/5.5/windows.html 进行下载.
+  解压后,进入bin目录,运行.\kibana.bat 访问http://127.0.0.1:5601 并且打开devtools.
+  调用下面的命令新建一个索引,需要注意的是POST创建索引
+  ```js
+    PUT /customer?pretty
+    GET /_cat/indices?v
+  ```
