@@ -67,7 +67,7 @@ java.lang.IllegalStateException: Received message from unsupported version: [2.0
   可以访问_cat/nodes?v接口,观察当前结点的信息,包括ip地址,版本号,结点名称等
 
 * 查询当前所有的index
-  可以访问接口_cat/indices?v,可以看到当前还没有任何Index
+ 可以访问接口_cat/indices?v,可以看到当前还没有任何Index
 
 * 新增一个Index
   安装kibana插件.kibana插件是用于协同和es工作的插件,可以通过https://www.elastic.co/guide/en/kibana/5.5/windows.html 进行下载.
