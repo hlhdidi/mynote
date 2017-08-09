@@ -9,6 +9,7 @@ tags: spring
 - [spring实战](#spring实战)
    - [springsecurity](#springsecurity)
    - [在spring中使用JDBC](#在spring中使用JDBC)
+   - [关系映射和持久化数据](#关系映射和持久化数据)
 <!-- /MDTOC -->
 
 # spring实战
@@ -314,4 +315,147 @@ UserInfo userInfo = jdbcOperations.queryForObject("select * from userinfo where 
         jdbcOperations.update("insert into userinfo (username,password) values(:username,:password)",
                 map);
     }
+```
+
+## 关系映射和持久化数据
+
+### 在spring中使用hibernate
+
+* 使用pom.xml
+
+  这里注意需要解决jar包的冲突:
+
+```xml
+<dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-orm</artifactId>
+      <version>4.3.2.RELEASE</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jboss.logging</groupId>
+          <artifactId>jboss-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>5.0.2.Final</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jboss.logging</groupId>
+          <artifactId>jboss-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-validator</artifactId>
+      <version>5.0.2.Final</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.validation</groupId>
+          <artifactId>validation-api</artifactId>
+        </exclusion>
+          <exclusion>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+          </exclusion>
+      </exclusions>
+    </dependency>
+    <!--独立处理jboss的冲突-->
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging</artifactId>
+      <version>3.2.0.Final</version>
+    </dependency>
+```
+
+* 建立持久化类.
+
+使用到了@Entity和@Table等注解标识持久化类
+```java
+@Entity
+@Table(name = "dog")
+public class Dog {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer did;
+    @Column
+    private String dname;
+    @Column
+    private Integer dage;
+
+    public Integer getDid() {
+        return did;
+    }
+
+    public void setDid(Integer did) {
+        this.did = did;
+    }
+
+    public String getDname() {
+        return dname;
+    }
+
+    public void setDname(String dname) {
+        this.dname = dname;
+    }
+
+    public Integer getDage() {
+        return dage;
+    }
+
+    public void setDage(Integer dage) {
+        this.dage = dage;
+    }
+}
+```
+
+* 设置LocalSessionFactoryBean
+```java
+@Bean(name = "sessionFactoryBean")
+    public LocalSessionFactoryBean sessionFactoryBean(DataSource dataSource) {
+        LocalSessionFactoryBean bean = new LocalSessionFactoryBean();
+        bean.setDataSource(dataSource);
+        bean.setPackagesToScan(new String[]{"com.hlhdidi.springaction.five.main.hb.domain"});
+        Properties properties = new Properties();
+        properties.setProperty("dialect","org.hibernate.dialect.MySQLDialect ");
+        bean.setHibernateProperties(properties);
+        return bean;
+    }
+```
+
+* 设置OpenSessionViewFilter.
+```java
+public class FilterInit implements WebApplicationInitializer{
+    @Override
+    public void onStartup(ServletContext servletContext) throws ServletException {
+        FilterRegistration.Dynamic filter = servletContext.addFilter("openSessionViewFilter", OpenSessionInViewFilter.class);
+        filter.addMappingForUrlPatterns(null,false,"/*");
+        filter.setInitParameter("singleSession","true");
+        filter.setInitParameter("sessionFactoryBeanName","sessionFactoryBean");
+    }
+}
+```
+
+* 建立持久化类完成持久化方法
+
+```java
+@Repository
+public class HbDogRepository {
+    @Autowired private SessionFactory sessionFactory;
+
+    private Session currentSession() {
+        return sessionFactory.getCurrentSession();
+    }
+
+    public void save(Dog dog) {
+        currentSession().save(dog);
+    }
+
+    public Dog findDogById(Integer id) {
+        return currentSession().get(Dog.class,id);
+    }
+}
 ```
