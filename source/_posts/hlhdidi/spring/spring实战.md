@@ -459,3 +459,138 @@ public class HbDogRepository {
     }
 }
 ```
+
+### 在spring中使用Jpa
+
+首先声明pom.xml:
+```xml
+<dependency>
+    <groupId>org.springframework.data</groupId>
+    <artifactId>spring-data-jpa</artifactId>
+    <version>1.9.1.RELEASE</version>
+  </dependency>
+    <dependency>
+      <groupId>org.hibernate.common</groupId>
+      <artifactId>hibernate-commons-annotations</artifactId>
+      <version>4.0.4.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-entitymanager</artifactId>
+      <version>5.0.2.Final</version>
+    </dependency>
+```
+在SpringRootConfig中,声明如下配置:
+```java
+    @Bean
+    public JpaTransactionManager transactionManager(LocalSessionFactoryBean bean) {
+        JpaTransactionManager manager = new JpaTransactionManager();
+        manager.setDataSource(dataSource());
+        return manager;
+    }
+    @Bean
+    public EntityManager entityManager() {
+        return entityManagerFactory(jpaVendorAdapter()).getObject().createEntityManager();
+    }
+
+    @Bean
+    public JpaVendorAdapter jpaVendorAdapter() {
+        HibernateJpaVendorAdapter adapter = new HibernateJpaVendorAdapter();
+        adapter.setShowSql(true);
+        adapter.setGenerateDdl(true);
+
+        adapter.setDatabasePlatform("org.hibernate.dialect.MySQLDialect");
+        return adapter;
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(JpaVendorAdapter adapter) {
+        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+        em.setDataSource(dataSource());
+        em.setJpaVendorAdapter(adapter);
+        em.setPackagesToScan("com.hlhdidi.springaction.five.main");
+        return em;
+    }
+```
+
+  在spring配置类处声明注解,开启SpringJpa
+```java
+@EnableTransactionManagement
+@EnableJpaRepositories(basePackages = "com.hlhdidi.springaction.five.main.dao.jpa")
+```
+  紧接着书写实体类:
+```java
+@Entity
+@Table(name = "teacher")
+@JsonIgnoreProperties(value={"hibernateLazyInitializer","handler","fieldHandler"})
+public class Teacher implements Serializable{
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer tid;
+    @Column
+    private String tName;
+
+    public Integer getTid() {
+        return tid;
+    }
+
+    public void setTid(Integer tid) {
+        this.tid = tid;
+    }
+
+    public String gettName() {
+        return tName;
+    }
+
+    public void settName(String tName) {
+        this.tName = tName;
+    }
+}
+```
+
+  建立紧接着就是建立Repository接口,使用的是继承Spring提供的JpaRepository接口的方法.需要注意,JpaRepository提供了一些基本的方法,我们可以使用,如下所示:
+```java
+List<T> findAll();
+
+    List<T> findAll(Sort var1);
+
+    List<T> findAll(Iterable<ID> var1);
+
+    <S extends T> List<S> save(Iterable<S> var1);
+
+    void flush();
+
+    <S extends T> S saveAndFlush(S var1);
+
+    void deleteInBatch(Iterable<T> var1);
+
+    void deleteAllInBatch();
+
+    T getOne(ID var1);
+```
+
+  但是可以通过断言机制,去让spring根据方法名去推断对应的sql..
+  例如:findTeacherByTNameLike,中find是查询动词,Teacher是主题,ByTNameLike则是断言.
+  spring支持四种动词,get,read,find,count.其中,get,read,find是一样的意思,而count则是查询数量.
+  主题通常不会明确太多的规范,但是当以distinct开头的时候,则spring会保证不会产生重复的记录.
+  断言则必须要指定属性,同时后面也可以指定比较操作,例如isAfter,Between等
+  当然我们也可以指定SQL,不使用这种断言机制:
+```java
+@Query("select count(tid) from Teacher ")
+    int findCountTeacher();
+```
+  当上述两种方法都不符合我们的需求的时候,就只能考虑较低的层面了,首先建立一个TeacherRepositoryImpl类,它不需要实现TeacherRepository,因为Spring在TeacherRepository不知道该方法执的SQL的时候,会自动给类名加上impl,试着去扫描路径下面找.
+```java
+public class TeacherRepositoryImpl {
+    @PersistenceContext
+    private EntityManager em;
+
+    public int delAllTeacher() {
+        return em.createQuery("delete from Teacher").executeUpdate();
+    }
+}
+```
+  当然啦,需要在TeacherRepository中添加同样的方法:
+```java
+public int delAllTeacher();
+```

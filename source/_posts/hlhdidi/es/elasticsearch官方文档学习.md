@@ -77,3 +77,85 @@ java.lang.IllegalStateException: Received message from unsupported version: [2.0
     PUT /customer?pretty
     GET /_cat/indices?v
   ```
+ * 新增一个文档
+  通过如下方式去做:
+```js
+PUT /customer/external/1?pretty
+{
+  "name": "John Doe"
+}
+```
+  其中,customer代表索引,external代表type,1则代表文档的Id.需要注意的是,索引,type都没有的时候,es会帮我们创建它.
+  创建完后,调用如下命令,就可以看到我们的文档信息了:
+```js
+GET /customer/external/1?pretty
+```
+
+* 删除索引
+  调用如下命令:
+```js
+DELETE /customer?pretty
+```
+  当看到返回true的时候,就代表删除成功了,这个时候再调用GET /_cat/indices?v将会提示没有索引.
+  可以看出基本都是以如下格式去执行命令的:
+```js
+<REST Verb> /<Index>/<Type>/<ID>
+```
+
+* 修改数据
+
+  可以使用传相同的Id,传不同的属性去修改对应的数据:
+```js
+PUT /customer/external/1?pretty
+{
+  "name": "Jane Doe"
+}
+```
+  这将会修改对应的属性值.
+  当然也可以使用PUT继续去放置对应的值.
+```js
+PUT /customer/external/2?pretty
+{
+  "name": "Jane Doe"
+}
+```
+
+* 更新文档
+
+  es更新文档并不是去直接更新的,而是采用的是先删除再重新构建索引的方式.基于这种方式,更新文档的方法如下:
+```js
+POST /customer/external/1/_update?pretty
+{
+  "doc": { "name": "Jane Doe" }
+}
+```
+
+  更新文档也可以去添加字段:
+```js
+POST /customer/external/1/_update?pretty
+{
+  "doc": { "name": "xyycici", "age": 25 }
+}
+```
+  也可以通过表达式去更新对应的document:
+```js
+POST /customer/external/1/_update?pretty
+{
+  "script" : "ctx._source.age -= 5"
+}
+```
+  ctx._source指向了当前被更新的文档对象
+
+* 删除文档
+
+  删除文档调用的接口如下所示:
+```js
+DELETE /customer/external/2?pretty
+```
+  需要注意的是,删除一个索引有时候比直接删除一个索引下面的所有文档更加有效.
+
+* 对文档的批量操作
+  es提供了对文档的批量操作:
+  如下,批量对文档进行了插入:
+```js
+```
