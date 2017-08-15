@@ -113,3 +113,24 @@ select count(DISTINCT(prod_price)),max(prod_id) from products
 WHERE是在分组前过滤,HAVING是在分组后过滤
 
 ## 关联查询和联结表
+
+* 组合查询
+在两种情况下需要使用到组合查询:
+1.在单个情况下需要从多个表返回结构相似的数据
+2.从一个表中返回多次数据
+
+通常情况下,组合查询和单表查询中的多个where条件是类似的.
+例如下面的sql把子渠道为1的和子渠道为2的都查出来了:
+```sql
+select * from stats_cart where sub_stats_channel = 1
+union
+select * from stats_cart where sub_stats_channel = 2
+```
+UNION的规则:
+1.UNION必须有两条或两条以上的select语句联结而成,并且语句之间用关键字UNION分割
+2.UNION的每个查询必须有相同的列,表达式或者聚集函数
+3.列数据类型必须相同,不一定要完全相同,但是至少要可以隐式转换的.
+4.UNION将会自动去除重复的行,如果不希望去除重复的行,使用UNION ALL.
+5.排序,order by 只允许对最终union生成的结果进行排序,不允许对于单个子查询语句进行排序,也就是说一条UNION ALL语句是没有办法有多个order by的
+
+* mysql的全文本搜索

@@ -10,6 +10,7 @@ tags: spring
    - [springsecurity](#springsecurity)
    - [在spring中使用JDBC](#在spring中使用JDBC)
    - [关系映射和持久化数据](#关系映射和持久化数据)
+   - [spring整合缓存型数据库](#spring整合缓存型数据库)
 <!-- /MDTOC -->
 
 # spring实战
@@ -594,3 +595,16 @@ public class TeacherRepositoryImpl {
 ```java
 public int delAllTeacher();
 ```
+
+## spring整合缓存型数据库
+
+### mongodb
+
+* 安装
+
+https://www.mongodb.com/download-center#community 直接选择msi文件安装即可,选择customer模式
+安装后,需要指定db文件夹的位置.如下
+mongod.exe --bind_ip 127.0.0.1 --logpath "F:\mongo\dbconf\mongodb.log" --logappend --dbpath "F:\mongo\db" --port 27017 --serviceName "hlhdidi_service" --serviceDisplayName "hlhdidi_service_display" --install
+
+紧接着只需要再次指定资源目录:mongod --dbpath=F:\mongo\db
+这时候服务器就已经开启了,可以通过新建个控制台,敲mongo去执行对应的命令
