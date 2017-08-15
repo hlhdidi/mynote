@@ -10,6 +10,7 @@ tags: mysql
    - [数据过滤与搜索](#数据过滤与搜索)
    - [计算和数据处理](#计算和数据处理)
    - [关联查询和联结表](#关联查询和联结表)
+   - [操纵数据和操作表](#操纵数据和操作表)
 <!-- /MDTOC -->
 
 # mysql必知必会
@@ -171,3 +172,45 @@ mysql筛选结果如下:
 ![mysql筛选结果](http://zdoc.oss-cn-beijing.aliyuncs.com/ff47b1bf5b3fd4f147f0164a308839fb.png)
 
 可以看出除了第一行,下面的行都是不包含关键字的,但是他们或多或少的包括关键字所在的行的其他单词,因此也被筛选出来了.
+布尔文本搜索,mysql还支持另外一种文本搜索的形式,称之为布尔文本搜索,以布尔的形式可以提供如下的细节:
+要匹配的词,要排斥的词,排列提示等.下面是使用布尔文本搜索的一些关键字:
+
+| 布尔操作符 |       含义        |
+| ---------- | ----------------- |
+| +          | 该词必须存在      |
+| -          | 排除,该词不能存在 |
+| >          | 包含,且增加等级值 |
+| <          | 包含,且减少等级值 |
+| *          | 词尾的通配符      |
+| ""         | 定义一个短语      |
+
+例如:
+包含heavy,不包含rope开头的词的
+```sql
+select note_text from productnotes where MATCH(note_text) AGAINST('heavy -rope*' IN BOOLEAN MODE)
+```
+包含rabit,habit至少一个的
+```sql
+select note_text from productnotes where MATCH(note_text) AGAINST('rabbit habbit' IN BOOLEAN MODE)
+```
+匹配rabit和habit,增加前者的等级,降低后者的等级
+```sql
+select note_text from productnotes where MATCH(note_text) AGAINST('>rabbit <habbit' IN BOOLEAN MODE)
+```
+
+全文本搜索有几个注意事项:
+1.MYSQL有个内用词表,这些词在索引的时候总是被忽略
+2.如果一个词出现在50%以上,则这个词会忽略,这一规则不使用与布尔模式
+3.如果表的行数较少(少于3行),则全文本搜索不会返回结果.
+4.忽略词中的单引号
+
+## 操纵数据和操作表
+
+* 插入数据
+
+省略列:如果表的定义允许可以在插入数据的时候,省略某些列的值,但是省略的列必须满足以下某个条件:
+1.该列定义为允许空值(无值或空值)
+2.表定义中给出默认值,这表示如果不给出值,将会使用默认值.
+如果不满足上面两个条件,则在插入的时候会报错.
+
+降低优先级:由于大多数情况下数据检索比数据插入要更加重要,因此当大规模操作的时候,而数据插入通常比较耗时,因此有时候,可以指定较低的优先级,保证不影响用户的数据检索,可以使用INSERT LOW_PRIORITY INTO xxx
