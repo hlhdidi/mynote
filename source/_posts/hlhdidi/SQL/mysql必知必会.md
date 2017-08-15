@@ -134,3 +134,40 @@ UNION的规则:
 5.排序,order by 只允许对最终union生成的结果进行排序,不允许对于单个子查询语句进行排序,也就是说一条UNION ALL语句是没有办法有多个order by的
 
 * mysql的全文本搜索
+
+可以在创建表的时候指定需要全文本搜索的列,例如如下所示(注意FULLLTEXT关键词以及ENGINE):
+```sql
+create table productnotes
+(
+	note_id int(11) not null auto_increment,
+	prod_id int(11),
+	note_date datetime not null,
+	note_text text NULL,
+	PRIMARY key(note_id),
+	FULLTEXT(note_text)
+)Engine = MyISAM
+```
+
+上面的SQL指定了note_text为支持全文搜索的索引.
+进行全文本搜索:
+使用Match和Against进行全文本搜索.
+Match指定了要全文搜索的列,而Against则指定要匹配的表达式.
+```sql
+select note_text from productnotes where MATCH(note_text) AGAINST('rabbit')
+```
+需要注意的是上面的sql语句,使用like其实也可以完成:
+```js
+select note_text FROM productnotes where note_text like '%rabbit%'
+```
+这个和全文本搜索有什么区别呢,区别在于全文本搜索采用了mysql自己判断的权重对于查询出来的结果进行了排序,权重是mysql根据词的数目,词最先出现的数字,包含词的行数计算出来,因此最先展示的通常是我们所需要的,此外全文搜索往往更加快捷
+
+使用查询扩展:
+查询扩展的意思就是说在通常情况下,我们指定一个关键字通常只会筛选出包含关键字的行,而在这时候我们需要筛选出来的是包含关键字且包含在包含关键字的行数里对我们有用的词的记录,这时候就需要使用到查询扩展.如下所示:
+```sql
+select note_text from productnotes where MATCH(note_text) AGAINST('anvils' with QUERY expansion)
+```
+
+mysql筛选结果如下:
+![mysql筛选结果](http://zdoc.oss-cn-beijing.aliyuncs.com/ff47b1bf5b3fd4f147f0164a308839fb.png)
+
+可以看出除了第一行,下面的行都是不包含关键字的,但是他们或多或少的包括关键字所在的行的其他单词,因此也被筛选出来了.
