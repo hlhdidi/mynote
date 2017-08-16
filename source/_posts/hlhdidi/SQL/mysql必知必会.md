@@ -11,6 +11,7 @@ tags: mysql
    - [计算和数据处理](#计算和数据处理)
    - [关联查询和联结表](#关联查询和联结表)
    - [操纵数据和操作表](#操纵数据和操作表)
+   - [视图,存储过程,游标和触发器](#视图,存储过程,游标和触发器)
 <!-- /MDTOC -->
 
 # mysql必知必会
@@ -214,3 +215,180 @@ select note_text from productnotes where MATCH(note_text) AGAINST('>rabbit <habb
 如果不满足上面两个条件,则在插入的时候会报错.
 
 降低优先级:由于大多数情况下数据检索比数据插入要更加重要,因此当大规模操作的时候,而数据插入通常比较耗时,因此有时候,可以指定较低的优先级,保证不影响用户的数据检索,可以使用INSERT LOW_PRIORITY INTO xxx
+
+插入多行数据:通常情况下采用的是如下的SQL:
+```sql
+insert into teacher(tid,tname) values(1,'xyycici'),(2,'hlhdidi'),(3,'www')...
+```
+该方法比多次批量插入可以显著的提升速度
+
+插入检索出的数据:
+我们可以将一次查询查询出的数据插入到表中,如下所示:
+```sql
+insert into teacher(tid,tname) select tid,tname from teacher_back
+```
+注意,上面列名的重复也没有关系,因为主要是根据列数取进行插入的
+注意,在select子句中可以通过where进行过滤
+
+* 插入表和更新数据
+
+设置某一个值为NULL:
+```sql
+update teacher set tname = NULL where id=1
+```
+
+获取接下来生成的主键:
+```sql
+select last_insert_id()
+```
+
+引擎类型:
+INNODB:事务处理引擎,但是不支持全文本搜素.需要注意的是,由于事务比较普遍,因此通常都是使用这个引擎
+MEMORY:内存型,效果等同于MyISAM.
+MyISAM:不支持事务,但是支持全文本搜素
+
+复杂表结构的更改一般涉及以下几个过程:
+1.用新的列布局创建一个新表.
+2.使用INSERT SELECT 语句将旧数据放到新表中去
+3.检查包含所需数据的新表
+4.重命名旧表
+5.用旧表原来的名字重命名新表
+6.根据需要创建索引,外键等
+
+## 视图,存储过程,游标和触发器
+
+* 视图
+
+视图的好处:
+1.重用SQL语句
+2.简化复杂的SQL操作
+3.使用表的组成部分而不是表
+4.保护表的数据,可以给予用户查看表的某一部分的权限,而不是查看整个表.
+5.更改数据格式和表示.
+
+注意:视图本身不包含数据,所以每次处理视图的时候,都必须处理查询执行时所需要的任何一个检索.因此使用视图有时候需要考虑到效率问题.
+
+视图创建和使用的规则和限制:
+1.视图必须唯一命名,且视图可以嵌套.
+2.ORDER BY可以用在视图中,但是如果在该视图中检索数据也用了ORDER BY,那么该视图的ORDER BY会被覆盖
+3.视图可以和表联结在一起用,例如编写一条连接表和视图的SQL语句.
+
+可以看看视图是怎么简化SQL操作的:
+```sql
+-- 创建一个视图
+create view productcustomers as
+select cust_name,cust_contact,prod_id
+from customers,orders,orderitems
+where customers.cust_id = orders.cust_id and orderitems.order_num = orders.order_num
+-- 从视图中查询
+select * from productcustomers
+```
+使用视图格式化检索出来的数据.
+```sql
+--使用视图格式化数据
+create view vendview AS
+select CONCAT(vend_name,'(',vend_country,')') from vendors
+
+select * from vendview
+```
+简化复杂的计算,例如,可以将复杂的计算结果作为一个字段存储在视图中,如下:
+```sql
+-- 存在就更新,不存在就插入
+create or REPLACE view orderprice as
+select order_num,prod_id,quantity,item_price,quantity*item_price as 'goodsprice' from orderitems
+
+select * from orderprice
+```
+
+一般来说,视图只用于检索,不用于更新
+
+* 存储过程
+
+存储过程简单来说,就是为了以后的使用而保存的一条或者多条SQL语句的集合.可以将其视为批文件,但是其使用范围不局限于批文件
+```sql
+-- 创建存储过程
+create PROCEDURE productpricing()
+BEGIN
+select AVG(products.prod_price) as 'avgprice' from products;
+END
+-- 调用存储过程
+call productpricing()
+```
+
+接收参数的存储过程:
+可以去建立存储过程,它是接受参数的,如下所示:
+```sql
+-- 创建存储过程,OUT表示从存储过程输出
+create PROCEDURE pricecaculate (OUT p1 DECIMAL(8,2),OUT p2 DECIMAL(8,2),OUT p3 DECIMAL(8,2))
+BEGIN
+select MIN(prod_price) into p1 from products;
+select MAX(prod_price) into p2 from products;
+select AVG(prod_price) into p3 from products;
+END
+-- 调用存储过程
+CALL pricecaculate(@min,@max,@avg)
+-- 查询数据
+select  @min
+```
+接下来是使用IN,OUT参数的:
+```sql
+create PROCEDURE orderpro(IN ordernum int,OUT totalprice DECIMAL(8,2))
+BEGIN
+select sum(item_price*quantity) from orderitems where order_num = ordernum into totalprice;
+END
+-- 调用
+call orderpro(20005,@total);
+
+select @total;
+```
+下面的SQL示范了IF语句和DECLARE声明一个变量的使用:
+```sql
+CREATE PROCEDURE ordertotal (IN onnumber INT,IN taxable BOOLEAN,OUT ototal DECIMAL(8,2))
+BEGIN
+-- 声明两个变量,一个存储税率,一个存储总计
+DECLARE total DECIMAL(8,2);
+DECLARE rate INT DEFAULT 6;
+SELECT SUM(item_price*quantity) from orderitems where order_num = onnumber INTO total;
+-- 如果需要上税.
+IF taxable THEN
+	select total+(total*rate/100) into total;
+END IF;
+select total into ototal;
+END
+--
+call ordertotal(20005,1,@total);
+
+select @total;
+```
+
+* 游标
+
+在存储了游标之后,用户可以根据需要在查询的结果集中上下来回浏览数据
+使用游标需要注意几点:
+1.在使用游标前必须定义它,实际上只是定义要使用的SELECT语句.
+2.一旦声明后,必须打开游标以供使用,通过前面声明的SELECT语句检索它.
+3.对于填有数据的游标,根据需要取出各行.
+4.在结束游标使用的时候必须关闭游标.
+
+游标在打开后,需要关闭,否则MYSQL将在碰到END时自动关闭,想要频繁开闭游标,则必须要频繁OPEN,CLOSE游标.下面是游标的基本使用方法:
+```sql
+create PROCEDURE processorders1()
+BEGIN
+	DECLARE done boolean DEFAULT 0;
+	DECLARE o int;
+	-- 定义游标
+	DECLARE ordernumscursor CURSOR FOR
+	select order_num from orders;
+ -- 在当找不到数据的时候done设为1
+	DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET done = 1;
+
+	-- 开启游标
+	open ordernumscursor;
+	REPEAT
+    -- 将当前的列推到o的局部变量中.
+		FETCH ordernumscursor into o;
+	UNTIL done end REPEAT;
+	-- 关闭游标
+	close ordernumscursor;
+END
+```
