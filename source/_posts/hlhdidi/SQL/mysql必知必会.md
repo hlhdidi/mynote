@@ -12,6 +12,7 @@ tags: mysql
    - [关联查询和联结表](#关联查询和联结表)
    - [操纵数据和操作表](#操纵数据和操作表)
    - [视图,存储过程,游标和触发器](#视图,存储过程,游标和触发器)
+   - [事务](#事务)
 <!-- /MDTOC -->
 
 # mysql必知必会
@@ -391,4 +392,82 @@ BEGIN
 	-- 关闭游标
 	close ordernumscursor;
 END
+```
+
+* 触发器
+
+在某个表发生更改的时候自动处理的操作称为触发器。创建触发器需要注意的是以下五点：
+1.唯一的触发器名
+2.触发器所关联的表
+3.触发器所关联的操作
+4.触发器是关联的操作前还是操作后
+5.只有表可以关联触发器，视图不行
+
+例如下面是个简单的触发器的例子：
+
+```sql
+create trigger newproduct after insert on products for each row select 'products'
+```
+
+这个触发器的作用是在每次插入products表记录的时候都输出products
+删除触发器：
+```sql
+drop trigger newproduct
+```
+
+## 事务
+
+* 事务处理
+
+利用事务处理，可以保证一组操作或者同时成功或者同时失败，即操作的一致性。
+几个概念：
+1.事务：指一组SQL语句
+2.回退：撤销制定SQL语句的过程
+3.提交：将未执行的SQL语句写入数据库
+4.保留点：事务处理中设置的临时占位符。可以对该点进行回退
+
+使用事务：
+```sql
+-- 开启事务
+start transaction;
+-- 查询ptag
+select * from ptag;
+delete from ptag;
+-- 回滚。
+rollback;
+-- 提交事务
+commit;
+```
+
+可以看出，由于回滚操作，事务并没有执行，ptag的记录保留。
+但是需要注意的是，回退没办法回退CREATE和drop语句。
+事务的隐含关闭：
+当调用完ROLLBACK/COMMIT的时候，事务将会关闭，之后就不存在事务了。如下所示：
+```sql
+start transaction;
+-- 查询ptag
+select * from ptag;
+-- 回滚。事务自动关闭
+rollback;
+-- 由于不存在事务了这个时候就算回退了记录也会被删除
+delete from ptag where tag_id = 79;
+-- 没用了
+rollback;
+-- 提交事务
+commit;
+```
+
+使用保留点：可以将事务回退到事务里任意一个保留点里面。
+```sql
+start transaction;
+-- 查询ptag
+select * from ptag;
+delete from ptag where tag_id = 37;
+-- 创建保留点
+savepoint d1;
+delete from ptag where tag_id = 80;
+-- 回滚到保留点d1，这个时候id为37的记录会被删除，id为80的记录不会删除
+rollback to d1;
+-- 提交事务
+commit;
 ```
